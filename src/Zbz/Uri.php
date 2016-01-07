@@ -14,7 +14,6 @@ class Uri
      * Конструктор
      *
      * @param string $uri
-     * @return self
      */
     public function __construct($uri = '')
     {
@@ -31,18 +30,16 @@ class Uri
      * Конструктор
      *
      * @param string $uri
-     * @param bool $normalize
-     * @return self
+     * @param bool   $normalize
+     *
+     * @return static
      */
     public static function get($uri = '', $normalize = false)
     {
-        if ($normalize)
-        {
-            return self::get($uri)->normalize();
-        }
-        else
-        {
-            return new self($uri);
+        if ($normalize) {
+            return static::get($uri)->normalize();
+        } else {
+            return new static($uri);
         }
     }
 
@@ -50,14 +47,15 @@ class Uri
      * Parsing a URI Reference with a Regular Expression
      *
      * @see http://tools.ietf.org/html/rfc3986#page-50
+     *
      * @param string $uri
+     *
      * @return array
      */
     public static function parse($uri = null)
     {
         preg_match('/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/', $uri, $match);
-        for ($i = count($match); $i <= 9; $i++)
-        {
+        for ($i = count($match); $i <= 9; ++$i) {
             $match[$i] = null;
         }
 
@@ -66,7 +64,7 @@ class Uri
             'authority' => $match[4],
             'path'      => $match[5],
             'query'     => $match[7],
-            'fragment'  => $match[9]
+            'fragment'  => $match[9],
         );
         // http://www.w3.org/2005/Incubator/wcl/matching.html#RFC3986
         // ^(([^:/?#]+):)?(//((([^/?#]*)@)?([^/?#:]*)(:([^/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?
@@ -83,6 +81,7 @@ class Uri
      *
      * @param string $base
      * @param string $relative
+     *
      * @return string
      */
     protected static function merge($base, $relative)
@@ -100,56 +99,40 @@ class Uri
      * the RFC3986 specification for URIs.
      *
      * @see http://tools.ietf.org/html/rfc3986#section-5.2.4
+     *
      * @param string $input
+     *
      * @return string
      */
     protected static function remove_dot_segments($input)
     {
         $output = '';
-        while (strpos($input, './') !== false || strpos($input, '/.') !== false || $input === '.' || $input === '..')
-        {
+        while (strpos($input, './') !== false || strpos($input, '/.') !== false || $input === '.' || $input === '..') {
             // A: If the input buffer begins with a prefix of "../" or "./", then remove that prefix from the input buffer; otherwise,
-            if (strpos($input, '../') === 0)
-            {
+            if (strpos($input, '../') === 0) {
                 $input = substr($input, 3);
-            }
-            elseif (strpos($input, './') === 0)
-            {
+            } elseif (strpos($input, './') === 0) {
                 $input = substr($input, 2);
                 // B: if the input buffer begins with a prefix of "/./" or "/.", where "." is a complete path segment, then replace that prefix with "/" in the input buffer; otherwise,
-            }
-            elseif (strpos($input, '/./') === 0)
-            {
+            } elseif (strpos($input, '/./') === 0) {
                 $input = substr_replace($input, '/', 0, 3);
-            }
-            elseif ($input === '/.')
-            {
+            } elseif ($input === '/.') {
                 $input = '/';
                 // C: if the input buffer begins with a prefix of "/../" or "/..", where ".." is a complete path segment, then replace that prefix with "/" in the input buffer and remove the last segment and its preceding "/" (if any) from the output buffer; otherwise,
-            }
-            elseif (strpos($input, '/../') === 0)
-            {
+            } elseif (strpos($input, '/../') === 0) {
                 $input  = substr_replace($input, '/', 0, 4);
                 $output = substr_replace($output, '', strrpos($output, '/'));
-            }
-            elseif ($input === '/..')
-            {
+            } elseif ($input === '/..') {
                 $input  = '/';
                 $output = substr_replace($output, '', strrpos($output, '/'));
                 // D: if the input buffer consists only of "." or "..", then remove that from the input buffer; otherwise,
-            }
-            elseif ($input === '.' || $input === '..')
-            {
+            } elseif ($input === '.' || $input === '..') {
                 $input = '';
                 // E: move the first path segment in the input buffer to the end of the output buffer, including the initial "/" character (if any) and any subsequent characters up to, but not including, the next "/" character or the end of the input buffer
-            }
-            elseif (($pos = strpos($input, '/', 1)) !== false)
-            {
+            } elseif (($pos = strpos($input, '/', 1)) !== false) {
                 $output .= substr($input, 0, $pos);
                 $input = substr_replace($input, '', 0, $pos);
-            }
-            else
-            {
+            } else {
                 $output .= $input;
                 $input = '';
             }
@@ -183,6 +166,16 @@ class Uri
         parse_str($this->getQuery(), $params);
         $params[$key] = $value;
         $this->setQuery(http_build_query($params));
+
+        return $this;
+    }
+
+    public function withParameter($key, $value)
+    {
+        $uri = clone $this;
+        $uri->setParameter($key, $value);
+
+        return $uri;
     }
 
     public function getScheme()
@@ -192,17 +185,18 @@ class Uri
 
     /**
      * @param string $scheme
+     *
+     * @return $this
      */
     public function setScheme($scheme)
     {
-        if ($scheme === null || $scheme === '')
-        {
+        if ($scheme === null || $scheme === '') {
             $this->scheme = null;
-        }
-        else
-        {
+        } else {
             $this->scheme = strtolower($scheme);
         }
+
+        return $this;
     }
 
     public function getAuthority()
@@ -212,17 +206,18 @@ class Uri
 
     /**
      * @param string $authority
+     *
+     * @return $this
      */
     public function setAuthority($authority)
     {
-        if ($authority === null || $authority === '')
-        {
+        if ($authority === null || $authority === '') {
             $this->authority = null;
-        }
-        else
-        {
+        } else {
             $this->authority = $authority;
         }
+
+        return $this;
     }
 
     public function getPath()
@@ -232,17 +227,18 @@ class Uri
 
     /**
      * @param string $path
+     *
+     * @return $this
      */
     public function setPath($path)
     {
-        if ($path === null || $path === '')
-        {
+        if ($path === null || $path === '') {
             $this->path = null;
-        }
-        else
-        {
+        } else {
             $this->path = trim($path);
         }
+
+        return $this;
     }
 
     public function getQuery()
@@ -252,14 +248,13 @@ class Uri
 
     public function setQuery($query)
     {
-        if ($query === null || $query === '')
-        {
+        if ($query === null || $query === '') {
             $this->query = null;
-        }
-        else
-        {
+        } else {
             $this->query = $query;
         }
+
+        return $this;
     }
 
     public function getParameters()
@@ -283,14 +278,13 @@ class Uri
 
     public function setFragment($fragment)
     {
-        if ($fragment === null || $fragment === '')
-        {
+        if ($fragment === null || $fragment === '') {
             $this->fragment = null;
-        }
-        else
-        {
+        } else {
             $this->fragment = $fragment;
         }
+
+        return $this;
     }
 
     /**
@@ -302,61 +296,44 @@ class Uri
      * @see http://tools.ietf.org/html/rfc3986#page-31
      *
      * @param string $relative
-     * @param boolean $strict
-     * @return self
+     * @param bool   $strict
+     *
+     * @return static
      */
     public function transformReference($relative, $strict = false)
     {
-        $base = $this;
-        /** @var Uri $relative */
-        $relative = new static((string) $relative);
-        /** @var Uri $transformed */
+        $base        = $this;
+        $relative    = new static((string) $relative);
         $transformed = new static();
 
-        if (!$strict && $relative->getScheme() == $this->getScheme())
-        {
+        if (!$strict && $relative->getScheme() == $this->getScheme()) {
             $relative->setScheme(null);
         }
 
-        if ($relative->getScheme() !== null)
-        {
+        if ($relative->getScheme() !== null) {
             $transformed->setScheme($relative->getScheme());
             $transformed->setAuthority($relative->getAuthority());
-            $transformed->setPath(self::remove_dot_segments($relative->getPath()));
+            $transformed->setPath(static::remove_dot_segments($relative->getPath()));
             $transformed->setQuery($relative->getQuery());
-        }
-        else
-        {
-            if ($relative->getAuthority() !== null)
-            {
+        } else {
+            if ($relative->getAuthority() !== null) {
                 $transformed->setAuthority($relative->getAuthority());
-                $transformed->setPath(self::remove_dot_segments($relative->getPath()));
+                $transformed->setPath(static::remove_dot_segments($relative->getPath()));
                 $transformed->setQuery($relative->getQuery());
-            }
-            else
-            {
-                if ($relative->getPath() == '')
-                {
+            } else {
+                if ($relative->getPath() == '') {
                     $transformed->setPath($base->getPath());
-                    if ($relative->getQuery() !== null)
-                    {
+                    if ($relative->getQuery() !== null) {
                         $transformed->setQuery($relative->getQuery());
-                    }
-                    else
-                    {
+                    } else {
                         $transformed->setQuery($base->getQuery());
                     }
-                }
-                else
-                {
-                    if ('/' == substr($relative->getPath(), 0, 1))
-                    {
-                        $transformed->setPath(self::remove_dot_segments($relative->getPath()));
-                    }
-                    else
-                    {
-                        $transformed->setPath(self::merge($base->getPath(), $relative->getPath()));
-                        $transformed->setPath(self::remove_dot_segments($transformed->getPath()));
+                } else {
+                    if ('/' == substr($relative->getPath(), 0, 1)) {
+                        $transformed->setPath(static::remove_dot_segments($relative->getPath()));
+                    } else {
+                        $transformed->setPath(static::merge($base->getPath(), $relative->getPath()));
+                        $transformed->setPath(static::remove_dot_segments($transformed->getPath()));
                     }
                     $transformed->setQuery($relative->getQuery());
                 }
@@ -373,29 +350,25 @@ class Uri
      * URI Component Recomposition
      *
      * @see http://tools.ietf.org/html/rfc3986#section-5.3
+     *
      * @return string
      */
     protected function build()
     {
         $uri = '';
-        if (!empty($this->scheme))
-        {
+        if (!empty($this->scheme)) {
             $uri .= sprintf('%s:', $this->scheme);
         }
-        if (!empty($this->authority))
-        {
+        if (!empty($this->authority)) {
             $uri .= sprintf('//%s', $this->authority);
         }
-        if (!empty($this->path))
-        {
+        if (!empty($this->path)) {
             $uri .= sprintf('%s', $this->path);
         }
-        if (!empty($this->query))
-        {
+        if (!empty($this->query)) {
             $uri .= sprintf('?%s', $this->query);
         }
-        if (!empty($this->fragment))
-        {
+        if (!empty($this->fragment)) {
             $uri .= sprintf('#%s', $this->fragment);
         }
 
@@ -406,13 +379,13 @@ class Uri
      * Нормализовать путь
      * Раскрывает папки вида '.' и '..'
      *
-     * @return self
+     * @return static
      */
     protected function normalize()
     {
         $path = $this->getPath();
         $path = preg_replace('#[\\\/]+#', '/', $path);
-        $path = self::remove_dot_segments($path);
+        $path = static::remove_dot_segments($path);
         $uri  = clone $this;
         $uri->setPath($path);
 
