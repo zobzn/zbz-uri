@@ -27,5 +27,8 @@
     "psr-4": {
       "Zbz\\": "src/Zbz"
     }
+  },
+  "scripts": {
+    "test": "phpunit"
   }
 }
