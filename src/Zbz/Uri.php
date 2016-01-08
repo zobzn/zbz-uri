@@ -161,26 +161,16 @@ class Uri
         return $this->build();
     }
 
-    public function setParameter($key, $value)
-    {
-        parse_str($this->getQuery(), $params);
-        $params[$key] = $value;
-        $this->setQuery(http_build_query($params));
-
-        return $this;
-    }
-
-    public function withParameter($key, $value)
-    {
-        $uri = clone $this;
-        $uri->setParameter($key, $value);
-
-        return $uri;
-    }
-
     public function getScheme()
     {
         return $this->scheme;
+    }
+
+    public function withScheme($scheme)
+    {
+        $uri = clone $this;
+
+        return $uri->setScheme($scheme);
     }
 
     /**
@@ -188,7 +178,7 @@ class Uri
      *
      * @return $this
      */
-    public function setScheme($scheme)
+    protected function setScheme($scheme)
     {
         if ($scheme === null || $scheme === '') {
             $this->scheme = null;
@@ -204,12 +194,14 @@ class Uri
         return $this->authority;
     }
 
-    /**
-     * @param string $authority
-     *
-     * @return $this
-     */
-    public function setAuthority($authority)
+    public function withAuthority($authority)
+    {
+        $uri = clone $this;
+
+        return $uri->setAuthority($authority);
+    }
+
+    protected function setAuthority($authority)
     {
         if ($authority === null || $authority === '') {
             $this->authority = null;
@@ -225,18 +217,19 @@ class Uri
         return $this->path;
     }
 
-    /**
-     * @param string $path
-     *
-     * @return $this
-     */
-    public function setPath($path)
+    public function withPath($path)
     {
-        if ($path === null || $path === '') {
-            $this->path = null;
-        } else {
-            $this->path = trim($path);
-        }
+        $uri = clone $this;
+
+        return $uri->setPath($path);
+    }
+
+    protected function setPath($path)
+    {
+        $path = trim(preg_replace('~[\\\/]+~', '/', $path));
+        $path = $path === '' ? null : $path;
+
+        $this->path = $path;
 
         return $this;
     }
@@ -246,7 +239,14 @@ class Uri
         return $this->query;
     }
 
-    public function setQuery($query)
+    public function withQuery($query)
+    {
+        $uri = clone $this;
+
+        return $uri->setQuery($query);
+    }
+
+    protected function setQuery($query)
     {
         if ($query === null || $query === '') {
             $this->query = null;
@@ -271,12 +271,36 @@ class Uri
         return isset($params[$key]) ? $params[$key] : $default;
     }
 
+    public function withParameter($key, $value)
+    {
+        $uri = clone $this;
+        $uri->setParameter($key, $value);
+
+        return $uri;
+    }
+
+    protected function setParameter($key, $value)
+    {
+        parse_str($this->getQuery(), $params);
+        $params[$key] = $value;
+        $this->setQuery(http_build_query($params));
+
+        return $this;
+    }
+
     public function getFragment()
     {
         return $this->fragment;
     }
 
-    public function setFragment($fragment)
+    public function withFragment($fragment)
+    {
+        $uri = clone $this;
+
+        return $uri->setFragment($fragment);
+    }
+
+    protected function setFragment($fragment)
     {
         if ($fragment === null || $fragment === '') {
             $this->fragment = null;
@@ -356,6 +380,7 @@ class Uri
     protected function build()
     {
         $uri = '';
+
         if (!empty($this->scheme)) {
             $uri .= sprintf('%s:', $this->scheme);
         }
@@ -386,9 +411,7 @@ class Uri
         $path = $this->getPath();
         $path = preg_replace('#[\\\/]+#', '/', $path);
         $path = static::remove_dot_segments($path);
-        $uri  = clone $this;
-        $uri->setPath($path);
 
-        return $uri;
+        return $this->withPath($path);
     }
 }
