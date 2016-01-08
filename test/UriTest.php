@@ -61,4 +61,16 @@ class UriTest extends PHPUnit_Framework_TestCase
         $this->assertSame('some/..', (string) Uri::get()->withPath('some/..'));
         $this->assertSame('some/../other', (string) Uri::get()->withPath('some/../other'));
     }
+
+    public function testMakeEmpty()
+    {
+        $uri = Uri::get('https://example.org/some/path/?some[]=value#key1&key2=val2&key3')
+            ->withScheme(null)
+            ->withAuthority(null)
+            ->withPath(null)
+            ->withQuery(null)
+            ->withFragment(null);
+
+        $this->assertSame('', (string) $uri);
+    }
 }
