@@ -1,5 +1,8 @@
 # zbz-uri
 
+[![Build Status](https://img.shields.io/travis/zobzn/zbz-uri/master.svg?style=flat-square)](https://travis-ci.org/zobzn/zbz-uri)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
+
 URI manipulation library
 
 ## Installation
